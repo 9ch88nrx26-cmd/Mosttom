@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>MostTo - More Stronger Tomorrow</title>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#111114;--card:#1c1c20;--card2:#242428;
+  --blue:#4A8FFF;--blue2:#2563eb;
+  --green:#22c55e;--red:#ef4444;--orange:#f97316;--purple:#a855f7;
+  --text:#fff;--sub:rgba(255,255,255,.45);--border:rgba(255,255,255,.08);
+}
+html{height:100%;background:var(--bg);}
+body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+
+/* ── 페이지 시스템 ── */
+.page{display:none;padding-bottom:80px;}
+.page.active{display:block;}
+
+/* ── 공통 헤더 ── */
+.app-header{
+display:flex;align-items:center;justify-content:space-between;
+padding:16px 20px 12px;position:sticky;top:0;z-index:50;
+background:var(–bg);border-bottom:1px solid var(–border);flex-shrink:0;
+}
+.app-title{font-size:20px;font-weight:900;letter-spacing:-.5px;}
+.app-title span{color:var(–blue);}
+.live-pill{font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:20px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);transition:all .3s;}
+.live-pill.on{background:rgba(34,197,94,.15);color:#22c55e;border-color:rgba(34,197,94,.3);}
+.page-title{font-size:20px;font-weight:900;}
+
+/* ── 하단 탭 ── */
+.tab-bar{
+position:fixed;bottom:0;left:0;right:0;height:72px;
+background:var(–card);border-top:1px solid var(–border);
+display:flex;align-items:center;justify-content:space-around;
+padding-bottom:env(safe-area-inset-bottom);z-index:200;
+}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(–sub);cursor:pointer;padding:6px 16px;border-radius:10px;transition:color .2s;}
+.tab-item.active{color:var(–blue);}
+.tab-icon{font-size:22px;line-height:1;}
+
+/* ══════════════════════════════
+홈 페이지
+══════════════════════════════ */
+.level-card{margin:14px 16px 0;background:var(–card);border-radius:16px;padding:16px 18px;border:1px solid var(–border);}
+.level-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.level-left{display:flex;align-items:center;gap:10px;}
+.level-circle{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(–blue2),var(–blue));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;box-shadow:0 0 16px rgba(74,143,255,.35);transition:all .3s;}
+.level-circle.up{box-shadow:0 0 30px rgba(74,143,255,.8);transform:scale(1.1);}
+.lv-sub{font-size:11px;color:var(–sub);font-weight:600;}
+.lv-name{font-size:16px;font-weight:800;margin-top:2px;}
+.level-right{text-align:right;}
+.exp-num{font-size:22px;font-weight:900;letter-spacing:-1px;}
+.exp-label{font-size:11px;color:var(–sub);margin-top:1px;}
+.exp-track{height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;}
+.exp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(–blue2),var(–blue));transition:width .5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(74,143,255,.5);}
+.exp-sub{display:flex;justify-content:space-between;margin-top:6px;}
+.exp-sub span{font-size:10px;color:var(–sub);}
+.ex-tabs{display:flex;gap:8px;padding:14px 16px 0;overflow-x:auto;scrollbar-width:none;}
+.ex-tabs::-webkit-scrollbar{display:none;}
+.ex-tab{flex-shrink:0;padding:9px 18px;border-radius:20px;font-family:inherit;font-size:13px;font-weight:700;background:var(–card);border:1px solid var(–border);color:var(–sub);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.ex-tab.active{background:var(–blue);border-color:var(–blue);color:#fff;box-shadow:0 4px 14px rgba(74,143,255,.35);}
+.camera-wrap{margin:14px 16px 0;position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:4/3;width:calc(100% - 32px);}
+#video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1);}
+#canvas{position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none;}
+.cam-tl{position:absolute;top:12px;left:12px;}
+.ex-pill{font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(6px);}
+.cam-btn-wrap{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);}
+.cam-btn{font-family:inherit;font-size:13px;font-weight:800;padding:11px 28px;border-radius:24px;background:var(–blue);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(74,143,255,.5);transition:all .2s;white-space:nowrap;}
+.cam-btn:active{transform:scale(.96);}
+.cam-btn.stop{background:rgba(0,0,0,.6);border:1px solid var(–border);box-shadow:none;backdrop-filter:blur(6px);}
+.cam-btn:disabled{opacity:.4;cursor:not-allowed;}
+.exp-popup{position:absolute;pointer-events:none;font-size:18px;font-weight:900;color:#fff;text-shadow:0 2px 12px rgba(74,143,255,.8);animation:float-up .9s ease-out forwards;z-index:10;white-space:nowrap;}
+@keyframes float-up{0%{opacity:1;transform:translateY(0) scale(1)}60%{opacity:1;transform:translateY(-40px) scale(1.15)}100%{opacity:0;transform:translateY(-80px) scale(.9)}}
+.levelup-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(74,143,255,.12);pointer-events:none;animation:luf .8s ease-out forwards;z-index:9;}
+@keyframes luf{0%{opacity:1}100%{opacity:0}}
+.levelup-text{font-size:32px;font-weight:900;color:#fff;text-shadow:0 0 30px rgba(74,143,255,.9);animation:lus .8s ease-out forwards;}
+@keyframes lus{0%{transform:scale(.5);opacity:0}50%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:0}}
+@keyframes flash-anim{0%{opacity:.4}100%{opacity:0}}
+.flash-overlay{position:absolute;inset:0;background:rgba(74,143,255,.2);pointer-events:none;animation:flash-anim .4s ease-out forwards;}
+.cheat-warn{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;padding:6px 16px;border-radius:20px;background:rgba(239,68,68,.25);color:#ef4444;border:1px solid rgba(239,68,68,.4);animation:flash-anim 1.2s ease-out forwards;pointer-events:none;white-space:nowrap;backdrop-filter:blur(6px);}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 16px 0;}
+.stat-card{background:var(–card);border-radius:14px;padding:11px 14px;border:1px solid var(–border);}
+.stat-card.wide{grid-column:1/-1;}
+.stat-label{font-size:10px;color:var(–sub);font-weight:600;letter-spacing:.5px;margin-bottom:4px;}
+.stat-big{font-size:36px;font-weight:900;letter-spacing:-2px;line-height:1;transition:transform .1s;}
+.stat-big.bump{transform:scale(1.12);}
+.stat-big.blue{color:var(–blue);}
+.stat-big.orange{color:var(–orange);}
+.phase-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:20px;margin-top:6px;text-transform:uppercase;background:rgba(255,255,255,.07);color:var(–sub);transition:all .2s;}
+.phase-badge.down{background:rgba(239,68,68,.15);color:#ef4444;}
+.phase-badge.up{background:rgba(34,197,94,.15);color:#22c55e;}
+.milestones{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.ms-chip{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.06);color:var(–sub);border:1px solid var(–border);transition:all .3s;}
+.ms-chip.reached{background:rgba(249,115,22,.15);color:var(–orange);border-color:rgba(249,115,22,.4);}
+.combo-bonus-tag{font-size:12px;font-weight:800;color:var(–orange);margin-left:6px;opacity:0;transition:opacity .2s;}
+.combo-bonus-tag.show{opacity:1;}
+.session-rows{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.session-row{display:flex;justify-content:space-between;align-items:center;}
+.session-name{font-size:13px;color:var(–sub);font-weight:600;}
+.session-val{font-size:15px;font-weight:800;color:var(–blue);}
+.angle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.angle-label{font-size:11px;color:var(–sub);font-weight:600;}
+.angle-val{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;}
+.track{height:4px;background:rgba(255,255,255,.07);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+.track-fill{height:100%;border-radius:2px;transition:width .1s,background .2s;}
+.reset-btn{width:calc(100% - 32px);margin:12px 16px;padding:13px;border-radius:12px;font-family:inherit;font-size:13px;font-weight:700;background:var(–card);border:1px solid var(–border);color:var(–sub);cursor:pointer;transition:all .2s;}
+.reset-btn:active{opacity:.7;}
+#error-msg{display:none;margin:10px 16px 0;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;}
+
+/* ══════════════════════════════
+기록 페이지
+══════════════════════════════ */
+.section{padding:16px 16px 0;}
+.section-title{font-size:13px;font-weight:700;color:var(–sub);letter-spacing:.5px;margin-bottom:10px;text-transform:uppercase;}
+
+/* 스트릭 */
+.streak-card{margin:0 16px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:18px;border:1px solid rgba(74,143,255,.2);display:flex;align-items:center;gap:16px;}
+.streak-icon{font-size:40px;line-height:1;}
+.streak-num{font-size:48px;font-weight:900;color:var(–orange);line-height:1;letter-spacing:-2px;}
+.streak-label{font-size:12px;color:var(–sub);margin-top:2px;}
+
+/* 누적 통계 */
+.total-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 16px;}
+.total-card{background:var(–card);border-radius:14px;padding:14px 12px;border:1px solid var(–border);text-align:center;}
+.total-icon{font-size:22px;margin-bottom:6px;}
+.total-num{font-size:24px;font-weight:900;color:var(–blue);letter-spacing:-1px;}
+.total-name{font-size:10px;color:var(–sub);font-weight:600;margin-top:2px;}
+
+/* 차트 */
+.chart-card{margin:0 16px;background:var(–card);border-radius:16px;padding:16px;border:1px solid var(–border);}
+.chart-tabs{display:flex;gap:4px;margin-bottom:14px;}
+.chart-tab{flex:1;padding:7px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;background:transparent;border:none;color:var(–sub);cursor:pointer;transition:all .2s;}
+.chart-tab.active{background:rgba(74,143,255,.15);color:var(–blue);}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:80px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar-body{width:100%;border-radius:4px 4px 0 0;background:var(–blue);opacity:.7;transition:height .4s,opacity .2s;min-height:4px;}
+.bar-body.highlight{opacity:1;background:var(–blue);box-shadow:0 0 10px rgba(74,143,255,.5);}
+.bar-day{font-size:9px;color:var(–sub);font-weight:600;}
+.bar-val{font-size:9px;color:var(–blue);font-weight:700;}
+
+/* 달력 */
+.calendar-card{margin:0 16px;background:var(–card);border-radius:16px;padding:16px;border:1px solid var(–border);}
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.cal-month{font-size:15px;font-weight:800;}
+.cal-nav{background:transparent;border:none;color:var(–sub);font-size:18px;cursor:pointer;padding:4px 8px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-day-label{font-size:10px;color:var(–sub);font-weight:600;text-align:center;padding:4px 0;}
+.cal-day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(–sub);position:relative;}
+.cal-day.has-workout{color:var(–text);}
+.cal-day.has-workout::after{content:’’;position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(–blue);}
+.cal-day.today{background:var(–blue);color:#fff;font-weight:800;}
+.cal-day.today::after{display:none;}
+
+/* ══════════════════════════════
+랭킹 페이지
+══════════════════════════════ */
+.rank-filter{display:flex;gap:8px;padding:14px 16px 0;overflow-x:auto;scrollbar-width:none;}
+.rank-filter::-webkit-scrollbar{display:none;}
+.rank-chip{flex-shrink:0;padding:7px 16px;border-radius:20px;font-family:inherit;font-size:12px;font-weight:700;background:var(–card);border:1px solid var(–border);color:var(–sub);cursor:pointer;transition:all .2s;}
+.rank-chip.active{background:var(–blue);border-color:var(–blue);color:#fff;}
+
+.my-rank-card{margin:12px 16px 0;background:linear-gradient(135deg,rgba(74,143,255,.15),rgba(37,99,235,.1));border-radius:16px;padding:16px;border:1px solid rgba(74,143,255,.3);display:flex;align-items:center;gap:14px;}
+.my-rank-num{font-size:32px;font-weight:900;color:var(–blue);width:48px;text-align:center;letter-spacing:-2px;}
+.my-rank-info{flex:1;}
+.my-rank-name{font-size:15px;font-weight:800;}
+.my-rank-sub{font-size:11px;color:var(–sub);margin-top:2px;}
+.my-rank-exp{font-size:18px;font-weight:900;color:var(–blue);}
+
+.rank-list{display:flex;flex-direction:column;gap:8px;padding:12px 16px 0;}
+.rank-item{background:var(–card);border-radius:14px;padding:14px;border:1px solid var(–border);display:flex;align-items:center;gap:12px;}
+.rank-pos{width:32px;text-align:center;font-size:16px;font-weight:900;color:var(–sub);}
+.rank-pos.gold{color:#fbbf24;}
+.rank-pos.silver{color:#94a3b8;}
+.rank-pos.bronze{color:#cd7c2f;}
+.rank-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.rank-info{flex:1;}
+.rank-name{font-size:14px;font-weight:800;}
+.rank-detail{font-size:11px;color:var(–sub);margin-top:2px;}
+.rank-exp-val{font-size:14px;font-weight:900;color:var(–blue);}
+
+/* ══════════════════════════════
+소셜 페이지
+══════════════════════════════ */
+.search-bar{margin:12px 16px 0;display:flex;gap:8px;}
+.search-input{flex:1;background:var(–card);border:1px solid var(–border);border-radius:12px;padding:11px 14px;font-family:inherit;font-size:14px;color:var(–text);outline:none;}
+.search-input::placeholder{color:var(–sub);}
+.search-btn{background:var(–blue);border:none;border-radius:12px;padding:11px 18px;font-family:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;}
+
+.today-challenge{margin:12px 16px 0;background:linear-gradient(135deg,rgba(168,85,247,.15),rgba(74,143,255,.1));border-radius:16px;padding:16px;border:1px solid rgba(168,85,247,.25);}
+.challenge-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.challenge-title{font-size:13px;font-weight:800;color:var(–purple);}
+.challenge-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(168,85,247,.2);color:var(–purple);}
+.challenge-list{display:flex;flex-direction:column;gap:8px;}
+.challenge-row{display:flex;justify-content:space-between;align-items:center;}
+.challenge-who{font-size:13px;font-weight:700;}
+.challenge-score{font-size:13px;font-weight:900;color:var(–blue);}
+.vs-bar{height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin-top:4px;}
+.vs-fill{height:100%;background:var(–blue);border-radius:2px;}
+
+.friend-list{display:flex;flex-direction:column;gap:8px;padding:0 16px;}
+.friend-item{background:var(–card);border-radius:14px;padding:14px;border:1px solid var(–border);display:flex;align-items:center;gap:12px;}
+.friend-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.friend-info{flex:1;}
+.friend-name{font-size:14px;font-weight:800;}
+.friend-status{font-size:11px;color:var(–sub);margin-top:2px;}
+.friend-lv{font-size:12px;font-weight:700;color:var(–blue);padding:3px 8px;border-radius:20px;background:rgba(74,143,255,.1);}
+.friend-req-btn{font-family:inherit;font-size:11px;font-weight:700;padding:7px 14px;border-radius:20px;background:var(–blue);color:#fff;border:none;cursor:pointer;}
+.friend-req-btn.pending{background:transparent;border:1px solid var(–border);color:var(–sub);}
+
+/* ══════════════════════════════
+로그인 페이지
+══════════════════════════════ */
+#page-login{
+min-height:100vh; display:flex; flex-direction:column;
+align-items:center; justify-content:center;
+padding:40px 24px; background:var(–bg); position:relative; overflow:hidden;
+}
+#page-login.hidden{display:none;}
+
+/* 배경 블러 원 */
+.login-bg-circle{
+position:absolute; border-radius:50%; filter:blur(80px); opacity:.25; pointer-events:none;
+}
+.login-bg-circle.c1{width:300px;height:300px;background:var(–blue);top:-80px;right:-80px;}
+.login-bg-circle.c2{width:200px;height:200px;background:var(–purple);bottom:60px;left:-60px;}
+
+.login-logo{
+font-size:36px;font-weight:900;letter-spacing:-1.5px;
+color:var(–text);margin-bottom:6px;text-align:center;position:relative;z-index:1;
+}
+.login-logo span{color:var(–blue);}
+.login-tagline{font-size:13px;color:var(–sub);text-align:center;margin-bottom:48px;position:relative;z-index:1;}
+
+/* 입력 폼 */
+.login-form{width:100%;max-width:340px;position:relative;z-index:1;}
+.login-input-wrap{margin-bottom:12px;}
+.login-input{
+width:100%;padding:14px 16px;border-radius:14px;
+background:var(–card);border:1px solid var(–border);
+font-family:inherit;font-size:15px;color:var(–text);outline:none;
+transition:border-color .2s;
+}
+.login-input:focus{border-color:var(–blue);}
+.login-input::placeholder{color:var(–sub);}
+.login-input-label{font-size:11px;font-weight:700;color:var(–sub);letter-spacing:.5px;margin-bottom:6px;display:block;}
+
+/* 메인 버튼 */
+.login-btn{
+width:100%;padding:15px;border-radius:14px;
+font-family:inherit;font-size:15px;font-weight:800;
+background:var(–blue);color:#fff;border:none;cursor:pointer;
+box-shadow:0 8px 24px rgba(74,143,255,.4);
+transition:all .2s;letter-spacing:.3px;margin-bottom:12px;
+}
+.login-btn:active{transform:scale(.97);}
+.login-btn.secondary{
+background:transparent;border:1px solid var(–border);
+color:var(–sub);box-shadow:none;
+}
+
+/* 구분선 */
+.login-divider{display:flex;align-items:center;gap:12px;margin:8px 0 16px;}
+.login-divider-line{flex:1;height:1px;background:var(–border);}
+.login-divider-text{font-size:12px;color:var(–sub);font-weight:600;}
+
+/* 구글 버튼 */
+.google-btn{
+width:100%;padding:14px;border-radius:14px;
+font-family:inherit;font-size:14px;font-weight:700;
+background:var(–card);color:var(–text);
+border:1px solid var(–border);cursor:pointer;
+display:flex;align-items:center;justify-content:center;gap:10px;
+transition:all .2s;margin-bottom:24px;
+}
+.google-btn:active{opacity:.7;}
+.google-icon{width:20px;height:20px;}
+
+/* 전환 텍스트 */
+.login-switch{font-size:13px;color:var(–sub);text-align:center;}
+.login-switch span{color:var(–blue);font-weight:700;cursor:pointer;}
+
+/* 에러 메시지 */
+.login-error{
+background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+color:#ef4444;padding:10px 14px;border-radius:10px;
+font-size:12px;font-weight:600;margin-bottom:12px;display:none;
+}
+
+/* 로딩 스피너 */
+.login-loading{display:none;flex-direction:column;align-items:center;gap:16px;}
+.spinner{width:40px;height:40px;border:3px solid rgba(74,143,255,.2);border-top-color:var(–blue);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:var(–sub);font-weight:600;}
+
+/* ── 닉네임 설정 화면 ── */
+#page-nickname{
+position:fixed;inset:0;background:var(–bg);
+display:none;flex-direction:column;
+align-items:center;justify-content:center;
+padding:40px 24px;z-index:999;
+}
+#page-nickname.show{display:flex;}
+.nickname-emoji{font-size:64px;margin-bottom:16px;}
+.nickname-title{font-size:26px;font-weight:900;margin-bottom:8px;text-align:center;}
+.nickname-sub{font-size:14px;color:var(–sub);text-align:center;margin-bottom:32px;line-height:1.5;}
+.nickname-form{width:100%;max-width:320px;}
+.nickname-input{
+width:100%;padding:16px;border-radius:14px;
+background:var(–card);border:2px solid var(–border);
+font-family:inherit;font-size:18px;font-weight:700;
+color:var(–text);outline:none;text-align:center;
+transition:border-color .2s;margin-bottom:12px;
+}
+.nickname-input:focus{border-color:var(–blue);}
+.nickname-hint{font-size:11px;color:var(–sub);text-align:center;margin-bottom:20px;}
+.nickname-btn{
+width:100%;padding:15px;border-radius:14px;
+font-family:inherit;font-size:15px;font-weight:800;
+background:var(–blue);color:#fff;border:none;cursor:pointer;
+box-shadow:0 8px 24px rgba(74,143,255,.4);transition:all .2s;
+}
+.nickname-btn:active{transform:scale(.97);}
+.nickname-error{font-size:12px;color:#ef4444;text-align:center;margin-bottom:8px;min-height:16px;}
+
+/* ══════════════════════════════
+프로필 페이지
+══════════════════════════════ */
+.profile-hero{background:linear-gradient(180deg,rgba(74,143,255,.15) 0%,transparent 100%);padding:24px 20px 16px;text-align:center;}
+.profile-avatar-wrap{position:relative;display:inline-block;margin-bottom:12px;}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(–blue2),var(–blue));display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto;}
+.profile-level-ring{position:absolute;bottom:-4px;right:-4px;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(–blue2),var(–blue));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid var(–bg);}
+.profile-name{font-size:22px;font-weight:900;margin-bottom:4px;}
+.profile-id{font-size:13px;color:var(–sub);}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(–border);border-radius:16px;overflow:hidden;margin:16px 16px 0;}
+.profile-stat{background:var(–card);padding:14px;text-align:center;}
+.profile-stat-num{font-size:20px;font-weight:900;color:var(–blue);}
+.profile-stat-label{font-size:10px;color:var(–sub);font-weight:600;margin-top:2px;}
+.badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 16px;}
+.badge-item{background:var(–card);border-radius:12px;padding:12px 8px;border:1px solid var(–border);text-align:center;}
+.badge-icon{font-size:24px;margin-bottom:4px;}
+.badge-name{font-size:9px;color:var(–sub);font-weight:600;line-height:1.3;}
+.badge-item.locked{opacity:.3;}
+.settings-list{display:flex;flex-direction:column;gap:1px;background:var(–border);border-radius:16px;overflow:hidden;margin:0 16px;}
+.settings-item{background:var(–card);padding:15px 16px;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;cursor:pointer;}
+.settings-item:active{opacity:.7;}
+.settings-arrow{color:var(–sub);}
+</style>
+
+</head>
+<body>
+
+<!-- ═══════════ 로그인 페이지 ═══════════ -->
+
+<div id="page-login">
+  <div class="login-bg-circle c1"></div>
+  <div class="login-bg-circle c2"></div>
+
+  <!-- 로고 -->
+
+  <div class="login-logo">Most<span>To</span></div>
+  <div class="login-tagline">More Stronger Tomorrow 💪</div>
+
+  <!-- 로딩 상태 -->
+
+  <div class="login-loading" id="login-loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">로그인 중...</div>
+  </div>
+
+  <!-- 로그인 폼 -->
+
+  <div class="login-form" id="login-form">
+    <div class="login-error" id="login-error"></div>
+
+```
+<!-- 이메일 로그인 -->
+<div id="form-login">
+  <div class="login-input-wrap">
+    <label class="login-input-label">이메일</label>
+    <input class="login-input" type="email" id="input-email" placeholder="example@email.com"/>
+  </div>
+  <div class="login-input-wrap">
+    <label class="login-input-label">비밀번호</label>
+    <input class="login-input" type="password" id="input-pw" placeholder="6자 이상"/>
+  </div>
+  <button class="login-btn" onclick="handleEmailLogin()">로그인</button>
+  <button class="login-btn secondary" onclick="showSignup()">회원가입</button>
+
+  <div class="login-divider">
+    <div class="login-divider-line"></div>
+    <div class="login-divider-text">또는</div>
+    <div class="login-divider-line"></div>
+  </div>
+
+  <button class="google-btn" onclick="handleGoogleLogin()">
+    <svg class="google-icon" viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </svg>
+    Google로 계속하기
+  </button>
+
+  <div class="login-switch">계정이 없으신가요? <span onclick="showSignup()">회원가입</span></div>
+</div>
+
+<!-- 회원가입 폼 -->
+<div id="form-signup" style="display:none">
+  <div class="login-input-wrap">
+    <label class="login-input-label">닉네임</label>
+    <input class="login-input" type="text" id="input-name" placeholder="운동 닉네임"/>
+  </div>
+  <div class="login-input-wrap">
+    <label class="login-input-label">이메일</label>
+    <input class="login-input" type="email" id="input-email2" placeholder="example@email.com"/>
+  </div>
+  <div class="login-input-wrap">
+    <label class="login-input-label">비밀번호</label>
+    <input class="login-input" type="password" id="input-pw2" placeholder="6자 이상"/>
+  </div>
+  <button class="login-btn" onclick="handleSignup()">회원가입</button>
+
+  <div class="login-divider">
+    <div class="login-divider-line"></div>
+    <div class="login-divider-text">또는</div>
+    <div class="login-divider-line"></div>
+  </div>
+
+  <button class="google-btn" onclick="handleGoogleLogin()">
+    <svg class="google-icon" viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </svg>
+    Google로 계속하기
+  </button>
+
+  <div class="login-switch">이미 계정이 있으신가요? <span onclick="showLogin()">로그인</span></div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- 앱 전체 (로그인 후 표시) -->
+
+<div id="app" style="display:none">
+
+<!-- ═══════════ 닉네임 설정 (첫 가입 시) ═══════════ -->
+
+<div id="page-nickname">
+  <div class="nickname-emoji">🏋️</div>
+  <div class="nickname-title">닉네임을 설정해요!</div>
+  <div class="nickname-sub">MostTo에서 사용할<br>나만의 닉네임을 입력해주세요</div>
+  <div class="nickname-form">
+    <div class="nickname-error" id="nickname-error"></div>
+    <input class="nickname-input" id="nickname-input" type="text"
+      placeholder="ex) 철벽승우" maxlength="12"/>
+    <div class="nickname-hint">2~12자, 한글/영문/숫자 사용 가능</div>
+    <button class="nickname-btn" onclick="submitNickname()">시작하기 🚀</button>
+  </div>
+</div>
+
+<!-- ═══════════ 홈 페이지 ═══════════ -->
+
+<div class="page active" id="page-home">
+  <div class="app-header">
+    <div class="app-title">Most<span>To</span></div>
+    <div class="live-pill" id="live-badge">● OFF</div>
+  </div>
+  <div class="level-card">
+    <div class="level-row">
+      <div class="level-left">
+        <div class="level-circle" id="level-badge">1</div>
+        <div><div class="lv-sub">CURRENT LEVEL</div><div class="lv-name" id="lv-name">Beginner</div></div>
+      </div>
+      <div class="level-right">
+        <div class="exp-num"><span id="exp-cur">0</span> <span style="font-size:13px;color:var(--sub);font-weight:600">EXP</span></div>
+        <div class="exp-label">NEXT: <span id="exp-need">200</span></div>
+      </div>
+    </div>
+    <div class="exp-track"><div class="exp-fill" id="exp-bar" style="width:0%"></div></div>
+    <div class="exp-sub"><span>TOTAL <span id="total-exp">0</span> EXP</span><span>SESSION +<span id="session-exp-top">0</span></span></div>
+  </div>
+  <div class="ex-tabs">
+    <button class="ex-tab active" data-ex="squat">🦵 스쿼트</button>
+    <button class="ex-tab" data-ex="pushup">💪 푸시업</button>
+    <button class="ex-tab" data-ex="pullup">🏋️ 풀업</button>
+  </div>
+  <div class="camera-wrap" id="video-panel">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+    <div class="cam-tl"><div class="ex-pill" id="ex-label">SQUAT</div></div>
+    <div class="cam-btn-wrap"><button class="cam-btn" id="btn-start">▶ 카메라 시작</button></div>
+  </div>
+  <div id="error-msg"></div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">REP COUNT</div>
+      <div class="stat-big blue" id="count-display">00</div>
+      <div class="phase-badge" id="phase-badge">IDLE</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">COMBO <span class="combo-bonus-tag" id="combo-bonus">BONUS!</span></div>
+      <div class="stat-big orange" id="combo-num">0</div>
+      <div class="milestones">
+        <div class="ms-chip" id="ms10">×10</div>
+        <div class="ms-chip" id="ms20">×20</div>
+        <div class="ms-chip" id="ms30">×30</div>
+      </div>
+    </div>
+    <div class="stat-card wide">
+      <div class="stat-label">SESSION EXP</div>
+      <div class="session-rows">
+        <div class="session-row"><span class="session-name">🦵 스쿼트</span><span class="session-val" id="s-squat">+0</span></div>
+        <div class="session-row"><span class="session-name">💪 푸시업</span><span class="session-val" id="s-pushup">+0</span></div>
+        <div class="session-row"><span class="session-name">🏋️ 풀업</span><span class="session-val" id="s-pullup">+0</span></div>
+      </div>
+    </div>
+    <div class="stat-card wide">
+      <div class="stat-label">JOINT ANGLES</div>
+      <div class="angle-row"><span class="angle-label">LEFT</span><span class="angle-val" id="m1">—</span></div>
+      <div class="track"><div class="track-fill" id="b1" style="width:0%"></div></div>
+      <div class="angle-row"><span class="angle-label">RIGHT</span><span class="angle-val" id="m2">—</span></div>
+      <div class="track"><div class="track-fill" id="b2" style="width:0%"></div></div>
+    </div>
+  </div>
+  <button class="reset-btn" id="btn-reset">↺ 세션 초기화</button>
+</div>
+
+<!-- ═══════════ 기록 페이지 ═══════════ -->
+
+<div class="page" id="page-record">
+  <div class="app-header"><div class="page-title">기록</div></div>
+
+  <!-- 스트릭 -->
+
+  <div class="section"><div class="section-title">연속 운동</div></div>
+  <div class="streak-card">
+    <div class="streak-icon">🔥</div>
+    <div><div class="streak-num">7</div><div class="streak-label">일 연속 운동 중!</div></div>
+    <div style="margin-left:auto;text-align:right"><div style="font-size:11px;color:var(--sub)">최고 기록</div><div style="font-size:20px;font-weight:900;color:var(--orange)">12일</div></div>
+  </div>
+
+  <!-- 누적 -->
+
+  <div class="section" style="margin-top:16px"><div class="section-title">누적 운동</div></div>
+  <div class="total-grid">
+    <div class="total-card"><div class="total-icon">🦵</div><div class="total-num" id="r-squat-total">0</div><div class="total-name">스쿼트</div></div>
+    <div class="total-card"><div class="total-icon">💪</div><div class="total-num" id="r-pushup-total">0</div><div class="total-name">푸시업</div></div>
+    <div class="total-card"><div class="total-icon">🏋️</div><div class="total-num" id="r-pullup-total">0</div><div class="total-name">풀업</div></div>
+  </div>
+
+  <!-- 주간 차트 -->
+
+  <div class="section" style="margin-top:16px"><div class="section-title">주간 활동</div></div>
+  <div class="chart-card">
+    <div class="chart-tabs">
+      <button class="chart-tab active" onclick="switchChart('week',this)">이번 주</button>
+      <button class="chart-tab" onclick="switchChart('month',this)">이번 달</button>
+    </div>
+    <div class="bar-chart" id="bar-chart"></div>
+  </div>
+
+  <!-- 달력 -->
+
+  <div class="section" style="margin-top:16px"><div class="section-title">운동 달력</div></div>
+  <div class="calendar-card">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+      <div class="cal-month" id="cal-month"></div>
+      <button class="cal-nav" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+  <div style="height:16px"></div>
+</div>
+
+<!-- ═══════════ 랭킹 페이지 ═══════════ -->
+
+<div class="page" id="page-rank">
+  <div class="app-header"><div class="page-title">랭킹</div></div>
+  <div class="rank-filter">
+    <button class="rank-chip active" onclick="switchRank('all',this)">전체</button>
+    <button class="rank-chip" onclick="switchRank('squat',this)">🦵 스쿼트</button>
+    <button class="rank-chip" onclick="switchRank('pushup',this)">💪 푸시업</button>
+    <button class="rank-chip" onclick="switchRank('pullup',this)">🏋️ 풀업</button>
+  </div>
+  <div class="my-rank-card">
+    <div class="my-rank-num" id="my-rank-pos">#24</div>
+    <div class="my-rank-info">
+      <div class="my-rank-name">나 (승우)</div>
+      <div class="my-rank-sub">LV.1 · Beginner</div>
+    </div>
+    <div class="my-rank-exp" id="my-rank-exp">0 EXP</div>
+  </div>
+  <div class="rank-list" id="rank-list"></div>
+  <div style="height:16px"></div>
+</div>
+
+<!-- ═══════════ 소셜 페이지 ═══════════ -->
+
+<div class="page" id="page-social">
+  <div class="app-header"><div class="page-title">소셜</div></div>
+  <div class="search-bar">
+    <input class="search-input" placeholder="친구 아이디 검색..." id="friend-search"/>
+    <button class="search-btn" onclick="searchFriend()">검색</button>
+  </div>
+
+  <!-- 오늘의 도전 -->
+
+  <div class="section" style="margin-top:12px"><div class="section-title">오늘의 도전</div></div>
+  <div class="today-challenge">
+    <div class="challenge-header">
+      <div class="challenge-title">⚔️ 친구 vs 나</div>
+      <div class="challenge-badge">진행 중</div>
+    </div>
+    <div class="challenge-list" id="challenge-list"></div>
+  </div>
+
+  <!-- 친구 목록 -->
+
+  <div class="section" style="margin-top:16px"><div class="section-title">친구 (<span id="friend-count">3</span>)</div></div>
+  <div class="friend-list" id="friend-list"></div>
+  <div style="height:16px"></div>
+</div>
+
+<!-- ═══════════ 프로필 페이지 ═══════════ -->
+
+<div class="page" id="page-profile">
+  <div class="app-header"><div class="page-title">프로필</div></div>
+  <div class="profile-hero">
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar">🧑</div>
+      <div class="profile-level-ring" id="profile-lv">1</div>
+    </div>
+    <div class="profile-name">승우</div>
+    <div class="profile-id">@seungwoo_fit</div>
+  </div>
+  <div class="profile-stats">
+    <div class="profile-stat"><div class="profile-stat-num" id="p-total-exp">0</div><div class="profile-stat-label">총 EXP</div></div>
+    <div class="profile-stat"><div class="profile-stat-num" id="p-streak">7</div><div class="profile-stat-label">연속일</div></div>
+    <div class="profile-stat"><div class="profile-stat-num">3</div><div class="profile-stat-label">친구</div></div>
+  </div>
+
+  <div class="section" style="margin-top:20px"><div class="section-title">획득 뱃지</div></div>
+  <div class="badge-grid">
+    <div class="badge-item"><div class="badge-icon">🔥</div><div class="badge-name">첫 운동</div></div>
+    <div class="badge-item"><div class="badge-icon">💪</div><div class="badge-name">100회 달성</div></div>
+    <div class="badge-item locked"><div class="badge-icon">⚡</div><div class="badge-name">7일 연속</div></div>
+    <div class="badge-item locked"><div class="badge-icon">👑</div><div class="badge-name">랭킹 TOP 10</div></div>
+    <div class="badge-item locked"><div class="badge-icon">🏆</div><div class="badge-name">LV.10 달성</div></div>
+    <div class="badge-item locked"><div class="badge-icon">🚀</div><div class="badge-name">풀업 50개</div></div>
+    <div class="badge-item locked"><div class="badge-icon">🎯</div><div class="badge-name">콤보 30x</div></div>
+    <div class="badge-item locked"><div class="badge-icon">💎</div><div class="badge-name">Legend</div></div>
+  </div>
+
+  <div class="section" style="margin-top:20px"><div class="section-title">설정</div></div>
+  <div class="settings-list">
+    <div class="settings-item"><span>👤 프로필 수정</span><span class="settings-arrow">›</span></div>
+    <div class="settings-item"><span>🔔 알림 설정</span><span class="settings-arrow">›</span></div>
+    <div class="settings-item"><span>🔒 계정 연동 (Firebase)</span><span class="settings-arrow">›</span></div>
+    <div class="settings-item" onclick="handleLogout()"><span style="color:var(--red)">로그아웃</span><span class="settings-arrow">›</span></div>
+  </div>
+  <div style="height:16px"></div>
+</div>
+
+<!-- 하단 탭 -->
+
+<div class="tab-bar">
+  <div class="tab-item active" data-page="home"><div class="tab-icon">🏠</div><div>홈</div></div>
+  <div class="tab-item" data-page="record"><div class="tab-icon">📅</div><div>기록</div></div>
+  <div class="tab-item" data-page="rank"><div class="tab-icon">🏆</div><div>랭킹</div></div>
+  <div class="tab-item" data-page="social"><div class="tab-icon">👥</div><div>소셜</div></div>
+  <div class="tab-item" data-page="profile"><div class="tab-icon">👤</div><div>프로필</div></div>
+</div>
+
+<!-- Firebase SDK -->
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+         updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp }
+         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── Firebase 초기화 ──
+const firebaseConfig = {
+  apiKey: "AIzaSyBhQerdl6JSbAZHHRuUuGjuKwcDlVAvDQo",
+  authDomain: "mosttom.firebaseapp.com",
+  projectId: "mosttom",
+  storageBucket: "mosttom.firebasestorage.app",
+  messagingSenderId: "164285100094",
+  appId: "1:164285100094:web:4f70451b19dc75b013616f"
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// ── 전역에 노출 (기존 JS에서 접근 가능) ──
+window._auth = auth;
+window._db   = db;
+window._signOut = () => signOut(auth);
+
+// ── 현재 유저 정보 ──
+let currentUser = null;
+
+// ── 로그인 상태 감지 ──
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    window._currentUser = user;
+    const isNew = await ensureUserDoc(user);
+    await loadUserData(user.uid);
+    if (isNew) {
+      // 신규 유저 → 닉네임 설정 화면
+      showNicknamePage(user);
+    } else {
+      showApp(user);
+    }
+  } else {
+    currentUser = null;
+    window._currentUser = null;
+    showLoginPage();
+  }
+});
+
+// ── Firestore: 유저 문서 없으면 생성, 신규 여부 반환 ──
+async function ensureUserDoc(user) {
+  const ref = doc(db, 'users', user.uid);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      uid: user.uid,
+      displayName: user.displayName || '',
+      email: user.email,
+      photoURL: user.photoURL || '',
+      level: 1,
+      totalExp: 0,
+      expInLevel: 0,
+      lifetimeReps: { squat:0, pushup:0, pullup:0 },
+      isNew: true,
+      createdAt: serverTimestamp(),
+    });
+    return true; // 신규 유저
+  }
+  // 닉네임이 없으면 다시 설정하게
+  const data = snap.data();
+  if (!data.displayName || data.displayName.trim() === '') return true;
+  return false; // 기존 유저
+}
+
+// ── Firestore: 유저 데이터 로드 ──
+async function loadUserData(uid) {
+  const snap = await getDoc(doc(db, 'users', uid));
+  if (snap.exists()) {
+    const d = snap.data();
+    window._userData = d;
+    totalExp     = d.totalExp     || 0;
+    currentLevel = d.level        || 1;
+    expInLevel   = d.expInLevel   || 0;
+    lifetimeReps = d.lifetimeReps || {squat:0,pushup:0,pullup:0};
+    workoutDays  = new Set(d.workoutDays || []);
+    streak       = d.streak       || calcStreak(workoutDays);
+    bestStreak   = d.bestStreak   || streak;
+  }
+}
+
+// ── Firestore: 유저 데이터 저장 ──
+window._saveUserData = async () => {
+  if (!window._currentUser) return;
+  await setDoc(doc(db, 'users', window._currentUser.uid), {
+    level: currentLevel,
+    totalExp,
+    expInLevel,
+    lifetimeReps,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+};
+
+// ── 닉네임 설정 화면 ──
+function showNicknamePage(user) {
+  document.getElementById('page-login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('page-nickname').classList.add('show');
+  // 구글 계정 이름 미리 채우기
+  if (user.displayName) {
+    document.getElementById('nickname-input').value = user.displayName;
+  }
+}
+
+window.submitNickname = async () => {
+  const nickname = document.getElementById('nickname-input').value.trim();
+  const errEl = document.getElementById('nickname-error');
+  if (nickname.length < 2) { errEl.textContent = '2자 이상 입력해주세요.'; return; }
+  if (nickname.length > 12) { errEl.textContent = '12자 이하로 입력해주세요.'; return; }
+  errEl.textContent = '';
+
+  try {
+    // Firebase Auth 프로필 업데이트
+    await updateProfile(window._currentUser, { displayName: nickname });
+    // Firestore 저장
+    await setDoc(doc(db, 'users', window._currentUser.uid), {
+      displayName: nickname,
+      isNew: false,
+    }, { merge: true });
+    // 닉네임 화면 닫고 홈으로
+    document.getElementById('page-nickname').classList.remove('show');
+    showApp(window._currentUser);
+  } catch(e) {
+    errEl.textContent = '저장 실패: ' + e.message;
+  }
+};
+
+// ── 화면 전환 ──
+function showApp(user) {
+  document.getElementById('page-login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  // 프로필 이름 반영
+  const name = user.displayName || '운동인';
+  document.querySelectorAll('.profile-name').forEach(el => el.textContent = name);
+  document.querySelector('.profile-id').textContent = '@' + name.toLowerCase().replace(/\s/g,'_');
+  updateRPGUI(false);
+  updateSessionUI();
+}
+function showLoginPage() {
+  document.getElementById('page-login').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  showLoginForm();
+}
+
+// ── 로그인 UI 헬퍼 ──
+function showLoading(msg) {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('login-loading').style.display = 'flex';
+  document.getElementById('loading-text').textContent = msg || '로그인 중...';
+}
+function hideLoading() {
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('login-loading').style.display = 'none';
+}
+function showErr(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+function showLoginForm() {
+  document.getElementById('form-login').style.display = 'block';
+  document.getElementById('form-signup').style.display = 'none';
+  hideLoading();
+}
+
+// ── 전역에 노출 (HTML onclick에서 호출) ──
+window.showLogin  = showLoginForm;
+window.showSignup = () => {
+  document.getElementById('form-login').style.display = 'none';
+  document.getElementById('form-signup').style.display = 'block';
+};
+
+// ── 이메일 로그인 ──
+window.handleEmailLogin = async () => {
+  const email = document.getElementById('input-email').value.trim();
+  const pw    = document.getElementById('input-pw').value;
+  if (!email || !pw) { showErr('이메일과 비밀번호를 입력해주세요.'); return; }
+  showLoading('로그인 중...');
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    // onAuthStateChanged가 자동으로 showApp() 호출
+  } catch(e) {
+    hideLoading();
+    const msgs = {
+      'auth/user-not-found': '등록되지 않은 이메일이에요.',
+      'auth/wrong-password': '비밀번호가 틀렸어요.',
+      'auth/invalid-email':  '이메일 형식이 올바르지 않아요.',
+      'auth/invalid-credential': '이메일 또는 비밀번호가 틀렸어요.',
+    };
+    showErr(msgs[e.code] || '로그인 실패: ' + e.message);
+  }
+};
+
+// ── 회원가입 ──
+window.handleSignup = async () => {
+  const name  = document.getElementById('input-name').value.trim();
+  const email = document.getElementById('input-email2').value.trim();
+  const pw    = document.getElementById('input-pw2').value;
+  if (!name)  { showErr('닉네임을 입력해주세요.'); return; }
+  if (!email) { showErr('이메일을 입력해주세요.'); return; }
+  if (pw.length < 6) { showErr('비밀번호는 6자 이상이어야 해요.'); return; }
+  showLoading('계정 만드는 중...');
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pw);
+    await updateProfile(cred.user, { displayName: name });
+    // onAuthStateChanged 자동 호출
+  } catch(e) {
+    hideLoading();
+    const msgs = {
+      'auth/email-already-in-use': '이미 사용 중인 이메일이에요.',
+      'auth/invalid-email':        '이메일 형식이 올바르지 않아요.',
+      'auth/weak-password':        '비밀번호가 너무 짧아요.',
+    };
+    showErr(msgs[e.code] || '회원가입 실패: ' + e.message);
+  }
+};
+
+// ── 구글 로그인 ──
+window.handleGoogleLogin = async () => {
+  showLoading('Google 로그인 중...');
+  try {
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    hideLoading();
+    if (e.code !== 'auth/popup-closed-by-user') {
+      showErr('Google 로그인 실패: ' + e.message);
+    }
+  }
+};
+
+// ── 로그아웃 ──
+window.handleLogout = async () => {
+  if (!confirm('로그아웃 하시겠어요?')) return;
+  await window._saveUserData();
+  await signOut(auth);
+};
+</script>
+
+<script>
+// ══════════════════════════════════════
+//  탭 네비게이션
+// ══════════════════════════════════════
+document.querySelectorAll('.tab-item').forEach(tab => {
+  tab.onclick = () => {
+    const page = tab.dataset.page;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    tab.classList.add('active');
+    window.scrollTo(0, 0);
+    if (page === 'record') renderRecord();
+    if (page === 'rank')   renderRank();
+    if (page === 'social') renderSocial();
+    if (page === 'profile') renderProfile();
+  };
+});
+
+// ══════════════════════════════════════
+//  EXP / 레벨 시스템
+// ══════════════════════════════════════
+const EXP_PER_REP = { squat:10, pushup:12, pullup:20 };
+const COMBO_BONUS = [{ at:10,bonus:20 },{ at:20,bonus:50 },{ at:30,bonus:100 }];
+const LEVEL_NAMES = ['','Beginner','Beginner','Beginner','Novice','Novice','Athlete','Athlete','Athlete','Athlete','Athlete','Warrior','Warrior','Warrior','Warrior','Warrior','Champion','Champion','Champion','Champion','Champion','Legend','Legend','Legend','Legend','Legend','Master','Master','Master','Master','Master'];
+function getLevelName(lv) { return LEVEL_NAMES[lv] || 'Elite'; }
+function expToNextLevel(lv) {
+  if(lv<=5) return 200; if(lv<=10) return 400;
+  if(lv<=20) return 600; if(lv<=30) return 800;
+  return 800+(Math.floor((lv-31)/10)+4)*200;
+}
+
+// 누적 데이터
+let totalExp=0, currentLevel=1, expInLevel=0;
+let sessionExp={squat:0,pushup:0,pullup:0}, combo=0;
+let lifetimeReps={squat:0,pushup:0,pullup:0};
+let workoutDays=new Set(); // 운동한 날짜 "YYYY-MM-DD"
+let streak=0, bestStreak=0;
+
+// 오늘 날짜 문자열
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+// 스트릭 계산
+function calcStreak(days) {
+  const sorted = [...days].sort().reverse();
+  if (!sorted.length) return 0;
+  let s=0, cur=new Date(); cur.setHours(0,0,0,0);
+  for (let i=0; i<sorted.length; i++) {
+    const d = new Date(sorted[i]); d.setHours(0,0,0,0);
+    const diff = Math.round((cur-d)/(1000*60*60*24));
+    if (diff===i) s++;
+    else break;
+  }
+  return s;
+}
+
+function addExp(type) {
+  let gained=EXP_PER_REP[type], bonusExp=0;
+  const ms=COMBO_BONUS.find(m=>m.at===combo);
+  if(ms){bonusExp=ms.bonus;gained+=bonusExp;}
+  sessionExp[type]+=gained; totalExp+=gained; expInLevel+=gained;
+  lifetimeReps[type]++;
+  workoutDays.add(todayStr());
+  streak = calcStreak(workoutDays);
+  if (streak > bestStreak) bestStreak = streak;
+  let leveledUp=false;
+  while(true){const need=expToNextLevel(currentLevel);if(expInLevel>=need){expInLevel-=need;currentLevel++;leveledUp=true;}else break;}
+  updateRPGUI(leveledUp); showExpPopup(gained, bonusExp>0); updateSessionUI();
+  // ── Firestore 자동 저장 ──
+  saveToFirestore();
+}
+
+// Firestore 저장 (debounce 적용 — 연속 저장 방지)
+let _saveTimer = null;
+function saveToFirestore() {
+  if (!window._currentUser) return;
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async () => {
+    try {
+      const { setDoc, doc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await setDoc(doc(window._db, 'users', window._currentUser.uid), {
+        level: currentLevel,
+        totalExp,
+        expInLevel,
+        lifetimeReps,
+        workoutDays: [...workoutDays],
+        streak,
+        bestStreak,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    } catch(e) { console.error('저장 실패:', e); }
+  }, 1500); // 1.5초 후 저장 (연속 운동 시 과도한 요청 방지)
+}
+function updateRPGUI(leveledUp) {
+  const need=expToNextLevel(currentLevel), pct=Math.min(100,(expInLevel/need)*100);
+  document.getElementById('level-badge').textContent=currentLevel;
+  document.getElementById('lv-name').textContent=getLevelName(currentLevel);
+  document.getElementById('exp-cur').textContent=expInLevel;
+  document.getElementById('exp-need').textContent=need;
+  document.getElementById('exp-bar').style.width=pct+'%';
+  document.getElementById('total-exp').textContent=totalExp;
+  document.getElementById('session-exp-top').textContent=sessionExp.squat+sessionExp.pushup+sessionExp.pullup;
+  if(leveledUp){const b=document.getElementById('level-badge');b.classList.add('up');setTimeout(()=>b.classList.remove('up'),800);showLevelUp();}
+}
+function updateSessionUI(){
+  document.getElementById('s-squat').textContent='+'+sessionExp.squat;
+  document.getElementById('s-pushup').textContent='+'+sessionExp.pushup;
+  document.getElementById('s-pullup').textContent='+'+sessionExp.pullup;
+}
+function updateComboUI(){
+  const el=document.getElementById('combo-num');
+  el.textContent=combo;el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),150);
+  document.getElementById('ms10').classList.toggle('reached',combo>=10);
+  document.getElementById('ms20').classList.toggle('reached',combo>=20);
+  document.getElementById('ms30').classList.toggle('reached',combo>=30);
+  const bt=document.getElementById('combo-bonus'),ms=COMBO_BONUS.find(m=>m.at===combo);
+  if(ms){bt.textContent='+'+ms.bonus+'!';bt.classList.add('show');setTimeout(()=>bt.classList.remove('show'),1500);}
+}
+function showExpPopup(amount,isBonus){
+  const panel=document.getElementById('video-panel'),el=document.createElement('div');
+  el.className='exp-popup';el.textContent=(isBonus?'★ ':'')+'+'+amount+' EXP';
+  if(isBonus) el.style.color='#f97316';
+  el.style.left=(15+Math.random()*60)+'%';el.style.bottom='25%';
+  panel.appendChild(el);setTimeout(()=>el.remove(),950);
+}
+function showLevelUp(){
+  const panel=document.getElementById('video-panel'),wrap=document.createElement('div');
+  wrap.className='levelup-overlay';wrap.innerHTML='<div class="levelup-text">LEVEL UP! 🎉</div>';
+  panel.appendChild(wrap);setTimeout(()=>wrap.remove(),900);
+}
+
+// ══════════════════════════════════════
+//  기록 페이지 렌더링
+// ══════════════════════════════════════
+const DUMMY_WEEK  = [0,0,0,0,0,0,0]; // 실제 데이터로 대체
+const DUMMY_MONTH = Array(31).fill(0);
+let chartMode = 'week';
+
+function getWeekData() {
+  const vals = [0,0,0,0,0,0,0];
+  const today = new Date(); today.setHours(0,0,0,0);
+  workoutDays.forEach(ds => {
+    const d = new Date(ds); d.setHours(0,0,0,0);
+    const diff = Math.round((today-d)/(1000*60*60*24));
+    if (diff >= 0 && diff < 7) {
+      const idx = (today.getDay()+6)%7 - ((d.getDay()+6)%7);
+      const pos = (today.getDay()+6)%7 - diff;
+      if (pos >= 0 && pos < 7) vals[pos] = 1;
+    }
+  });
+  return vals;
+}
+
+function getMonthData() {
+  const today = new Date();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+  const vals = Array(daysInMonth).fill(0);
+  workoutDays.forEach(ds => {
+    const d = new Date(ds);
+    if (d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth()) {
+      vals[d.getDate()-1] = 1;
+    }
+  });
+  return vals;
+}
+
+function switchChart(mode, btn) {
+  chartMode = mode;
+  document.querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderBarChart();
+}
+function renderBarChart() {
+  const isWeek = chartMode==='week';
+  const vals   = isWeek ? getWeekData() : getMonthData();
+  const labels = isWeek
+    ? ['월','화','수','목','금','토','일']
+    : Array.from({length:vals.length},(_,i)=>i+1+'');
+  const max  = Math.max(...vals, 1);
+  const today = isWeek ? (new Date().getDay()+6)%7 : new Date().getDate()-1;
+  const chart = document.getElementById('bar-chart');
+  chart.innerHTML = vals.map((v,i)=>`
+    <div class="bar-col">
+      <div class="bar-val" style="color:${v?'var(--blue)':'transparent'}">${v?'✓':''}</div>
+      <div class="bar-body ${i===today?'highlight':''}" style="height:${v?72:4}px;opacity:${v?1:.15}"></div>
+      <div class="bar-day">${labels[i]}</div>
+    </div>`).join('');
+}
+
+// 달력
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+function changeMonth(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+function renderCal(){
+  const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('cal-month').textContent=calYear+'년 '+months[calMonth];
+  const days=['일','월','화','수','목','금','토'];
+  const today=new Date(); const todayStr=today.toISOString().split('T')[0];
+  const first=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  // 더미 운동 날짜
+  const dummyDays=new Set([1,3,4,5,8,10,11,12,15,17,18,19,22,24,25,26].map(d=>{
+    const dt=new Date(calYear,calMonth,d);return dt.toISOString().split('T')[0];
+  }));
+  const allWorkoutDays=new Set([...dummyDays,...workoutDays]);
+  let html=days.map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+  for(let i=0;i<first;i++) html+=`<div class="cal-day"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=ds===todayStr, hasW=allWorkoutDays.has(ds);
+    html+=`<div class="cal-day${isToday?' today':hasW?' has-workout':''}">${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+
+function renderRecord() {
+  // 실제 누적 데이터
+  document.getElementById('r-squat-total').textContent  = lifetimeReps.squat  || 0;
+  document.getElementById('r-pushup-total').textContent = lifetimeReps.pushup || 0;
+  document.getElementById('r-pullup-total').textContent = lifetimeReps.pullup || 0;
+
+  // 스트릭
+  const curStreak  = streak || calcStreak(workoutDays);
+  const bestStr    = bestStreak || curStreak;
+  const streakEl   = document.querySelector('.streak-num');
+  const bestEl     = document.querySelector('.streak-card div:last-child div:first-child + div');
+  if (streakEl) streakEl.textContent = curStreak;
+  const allBest = document.querySelectorAll('.streak-card .streak-num ~ * > *');
+  // 최고 기록 업데이트
+  const streakCard = document.querySelector('.streak-card');
+  if (streakCard) {
+    streakCard.querySelector('.streak-num').textContent = curStreak;
+    const bestNumEl = streakCard.querySelectorAll('div > div');
+    if (bestNumEl[1]) bestNumEl[1].textContent = bestStr + '일';
+  }
+
+  // 주간 차트 — 실제 운동 날짜 기반
+  renderBarChart();
+  renderCal();
+}
+
+// ══════════════════════════════════════
+//  랭킹 페이지 — Firestore 실시간 연동
+// ══════════════════════════════════════
+const medals = ['🥇','🥈','🥉'];
+const AVATARS = ['🦁','🐯','🦊','🐺','🦋','🐻','🦅','🐉','🦄','🐸','🐨','🐼','🦁','🦈','🦖'];
+const COLORS  = ['#f97316','#a855f7','#22c55e','#4A8FFF','#ec4899','#f59e0b','#14b8a6','#ef4444','#8b5cf6','#10b981'];
+
+let currentRankType = 'all';
+
+async function renderRank() {
+  const list = document.getElementById('rank-list');
+  list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--sub);font-size:13px">불러오는 중...</div>';
+
+  try {
+    const { collection, query, orderBy, limit, getDocs } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    // 운동 종류별 필드 결정
+    const sortField = currentRankType === 'all'    ? 'totalExp'
+                    : currentRankType === 'squat'  ? 'lifetimeReps.squat'
+                    : currentRankType === 'pushup' ? 'lifetimeReps.pushup'
+                    :                                'lifetimeReps.pullup';
+
+    const q = query(
+      collection(window._db, 'users'),
+      orderBy('totalExp', 'desc'),
+      limit(20)
+    );
+    const snap = await getDocs(q);
+    const users = [];
+    snap.forEach(d => users.push({ id: d.id, ...d.data() }));
+
+    // 내 순위 찾기
+    const myUid = window._currentUser?.uid;
+    const myIdx = users.findIndex(u => u.id === myUid);
+    const myRank = myIdx >= 0 ? myIdx + 1 : '?';
+
+    // 내 순위 카드 업데이트
+    document.getElementById('my-rank-pos').textContent = '#' + myRank;
+    document.getElementById('my-rank-exp').textContent = totalExp.toLocaleString() + ' EXP';
+    document.querySelector('.my-rank-name').textContent = window._currentUser?.displayName || '나';
+    document.querySelector('.my-rank-sub').textContent = `LV.${currentLevel} · ${getLevelName(currentLevel)}`;
+
+    if (users.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--sub);font-size:13px">아직 유저가 없어요.<br>첫 번째 운동을 시작해보세요! 💪</div>';
+      return;
+    }
+
+    list.innerHTML = users.map((u, i) => {
+      const isMe = u.id === myUid;
+      const avatar = AVATARS[i % AVATARS.length];
+      const color  = COLORS[i % COLORS.length];
+      const exp    = (u.totalExp || 0).toLocaleString();
+      const lv     = u.level || 1;
+      const name   = u.displayName || '운동인';
+      return `
+        <div class="rank-item" style="${isMe ? 'border-color:rgba(74,143,255,.4);background:rgba(74,143,255,.06)' : ''}">
+          <div class="rank-pos ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i<3?medals[i]:i+1}</div>
+          <div class="rank-avatar" style="background:${color}22">${isMe ? '😤' : avatar}</div>
+          <div class="rank-info">
+            <div class="rank-name">${name} ${isMe ? '· 나' : ''}</div>
+            <div class="rank-detail">LV.${lv} · ${getLevelName(lv)}</div>
+          </div>
+          <div class="rank-exp-val">${exp}</div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444;font-size:12px">불러오기 실패: ${e.message}</div>`;
+  }
+}
+
+function switchRank(type, btn) {
+  currentRankType = type;
+  document.querySelectorAll('.rank-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderRank();
+}
+
+// ══════════════════════════════════════
+//  소셜 페이지 — Firestore 실제 연동
+//  구조:
+//  users/{uid}/friends/{friendUid} = { status: 'accepted'|'pending' }
+//  친구 검색: displayName으로 검색
+// ══════════════════════════════════════
+const FRIEND_AVATARS = ['🦁','🐯','🦊','🐺','🦋','🐻','🦅','🐉','🦄','🐸'];
+
+async function renderSocial() {
+  if (!window._currentUser) return;
+  const myUid = window._currentUser.uid;
+
+  try {
+    const { collection, query, where, getDocs, doc, getDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    // 수락된 친구 목록 불러오기
+    const friendsSnap = await getDocs(
+      query(collection(window._db, 'users', myUid, 'friends'),
+            where('status', '==', 'accepted'))
+    );
+
+    const friendIds = [];
+    friendsSnap.forEach(d => friendIds.push(d.id));
+
+    // 친구 수 업데이트
+    document.getElementById('friend-count').textContent = friendIds.length;
+
+    // 친구 정보 불러오기
+    const fl = document.getElementById('friend-list');
+    if (friendIds.length === 0) {
+      fl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--sub);font-size:13px">아직 친구가 없어요.<br>닉네임으로 친구를 검색해보세요! 👥</div>';
+      document.getElementById('challenge-list').innerHTML =
+        '<div style="font-size:12px;color:var(--sub);text-align:center;padding:8px">친구를 추가하면 도전이 시작돼요!</div>';
+      return;
+    }
+
+    // 친구 데이터 병렬 로드
+    const friendDocs = await Promise.all(
+      friendIds.map(uid => getDoc(doc(window._db, 'users', uid)))
+    );
+    const friends = friendDocs
+      .filter(d => d.exists())
+      .map(d => ({ id: d.id, ...d.data() }));
+
+    fl.innerHTML = friends.map((f, i) => {
+      const avatar = FRIEND_AVATARS[i % FRIEND_AVATARS.length];
+      const lv = f.level || 1;
+      const todayWorked = (f.workoutDays || []).includes(todayStr());
+      const status = todayWorked ? '오늘 운동 완료! 💪' : '아직 운동 안 함';
+      return `
+        <div class="friend-item">
+          <div class="friend-avatar" style="background:${COLORS[i%COLORS.length]}22">${avatar}</div>
+          <div class="friend-info">
+            <div class="friend-name">${f.displayName || '운동인'}</div>
+            <div class="friend-status">${status}</div>
+          </div>
+          <div class="friend-lv">LV.${lv}</div>
+        </div>`;
+    }).join('');
+
+    // 오늘의 도전 — 친구 vs 나 (오늘 EXP 비교)
+    const cl = document.getElementById('challenge-list');
+    const myTodayExp = sessionExp.squat + sessionExp.pushup + sessionExp.pullup;
+    cl.innerHTML = friends.slice(0,3).map(f => {
+      const theirExp = f.totalExp || 0;
+      const tot = Math.max(myTodayExp + theirExp, 1);
+      const myPct = Math.round((myTodayExp / tot) * 100);
+      const win = myTodayExp >= theirExp;
+      return `<div style="margin-bottom:10px">
+        <div class="challenge-row">
+          <div class="challenge-who">${f.displayName || '운동인'}</div>
+          <div class="challenge-score" style="color:${win?'#22c55e':'#ef4444'}">
+            나 ${myTodayExp} vs ${theirExp}
+          </div>
+        </div>
+        <div class="vs-bar">
+          <div class="vs-fill" style="width:${myPct}%;background:${win?'#22c55e':'#ef4444'}"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    document.getElementById('friend-list').innerHTML =
+      `<div style="text-align:center;padding:16px;color:#ef4444;font-size:12px">불러오기 실패: ${e.message}</div>`;
+  }
+}
+
+// ── 친구 검색 ──
+async function searchFriend() {
+  const q = document.getElementById('friend-search').value.trim();
+  if (!q) return;
+  if (!window._currentUser) return;
+  const myUid = window._currentUser.uid;
+
+  const resultArea = document.getElementById('friend-list');
+  resultArea.innerHTML = '<div style="text-align:center;padding:16px;color:var(--sub);font-size:13px">검색 중...</div>';
+
+  try {
+    const { collection, query, where, getDocs, doc, setDoc, getDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    // displayName으로 검색 (대소문자 구분)
+    const snap = await getDocs(
+      query(collection(window._db, 'users'), where('displayName', '==', q))
+    );
+
+    if (snap.empty) {
+      resultArea.innerHTML = `<div style="text-align:center;padding:24px;color:var(--sub);font-size:13px">"${q}" 유저를 찾을 수 없어요.</div>`;
+      return;
+    }
+
+    const results = [];
+    snap.forEach(d => { if (d.id !== myUid) results.push({ id: d.id, ...d.data() }); });
+
+    if (results.length === 0) {
+      resultArea.innerHTML = '<div style="text-align:center;padding:24px;color:var(--sub);font-size:13px">본인은 추가할 수 없어요.</div>';
+      return;
+    }
+
+    resultArea.innerHTML = results.map((u, i) => {
+      const avatar = FRIEND_AVATARS[i % FRIEND_AVATARS.length];
+      return `
+        <div class="friend-item">
+          <div class="friend-avatar" style="background:rgba(74,143,255,.15)">${avatar}</div>
+          <div class="friend-info">
+            <div class="friend-name">${u.displayName}</div>
+            <div class="friend-status">LV.${u.level||1} · ${getLevelName(u.level||1)}</div>
+          </div>
+          <button class="friend-req-btn" onclick="addFriend('${u.id}', this)">친구 추가</button>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    resultArea.innerHTML = `<div style="color:#ef4444;font-size:12px;padding:12px">검색 실패: ${e.message}</div>`;
+  }
+}
+window.searchFriend = searchFriend;
+
+// ── 친구 추가 요청 ──
+window.addFriend = async (friendUid, btn) => {
+  if (!window._currentUser) return;
+  const myUid = window._currentUser.uid;
+  btn.textContent = '추가 중...';
+  btn.disabled = true;
+
+  try {
+    const { doc, setDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    // 양방향으로 친구 관계 저장 (바로 accepted — 간단 버전)
+    await setDoc(doc(window._db, 'users', myUid, 'friends', friendUid), {
+      status: 'accepted', addedAt: new Date().toISOString()
+    });
+    await setDoc(doc(window._db, 'users', friendUid, 'friends', myUid), {
+      status: 'accepted', addedAt: new Date().toISOString()
+    });
+
+    btn.textContent = '✓ 추가됨';
+    btn.style.background = 'rgba(34,197,94,.15)';
+    btn.style.color = '#22c55e';
+    btn.style.border = '1px solid rgba(34,197,94,.3)';
+
+  } catch(e) {
+    btn.textContent = '실패';
+    btn.disabled = false;
+  }
+};
+
+// ══════════════════════════════════════
+//  프로필 페이지
+// ══════════════════════════════════════
+function renderProfile(){
+  document.getElementById('profile-lv').textContent = currentLevel;
+  document.getElementById('p-total-exp').textContent = totalExp;
+  document.getElementById('p-streak').textContent = streak || calcStreak(workoutDays);
+  // 뱃지 해금 조건
+  const totalReps = lifetimeReps.squat + lifetimeReps.pushup + lifetimeReps.pullup;
+  const badges = document.querySelectorAll('.badge-item');
+  if (totalReps >= 1)   badges[0]?.classList.remove('locked'); // 첫 운동
+  if (totalReps >= 100) badges[1]?.classList.remove('locked'); // 100회
+  if (streak >= 7)      badges[2]?.classList.remove('locked'); // 7일 연속
+  if (currentLevel >= 10) badges[4]?.classList.remove('locked'); // LV.10
+  if (lifetimeReps.pullup >= 50) badges[5]?.classList.remove('locked'); // 풀업 50
+}
+
+// ══════════════════════════════════════
+//  운동 감지 (기존 로직 전체 보존)
+// ══════════════════════════════════════
+function calcAngle(a,b,c){const rad=Math.atan2(c.y-b.y,c.x-b.x)-Math.atan2(a.y-b.y,a.x-b.x);let deg=Math.abs(rad*180/Math.PI);if(deg>180)deg=360-deg;return deg;}
+const LM={L_SHOULDER:11,R_SHOULDER:12,L_ELBOW:13,R_ELBOW:14,L_WRIST:15,R_WRIST:16,L_HIP:23,R_HIP:24,L_KNEE:25,R_KNEE:26,L_ANKLE:27,R_ANKLE:28};
+const EXERCISE_CONFIG={squat:{label:'SQUAT',downThr:100,upThr:160},pushup:{label:'PUSH-UP',downThr:90,upThr:155},pullup:{label:'PULL-UP',downThr:155,upThr:60}};
+let currentEx='squat',repCount=0,phase='IDLE',angleHistory=[];
+const SMOOTH_N=5;let cameraInstance=null;
+let shoulderYHistory=[],hipYHistory=[],pullupShoulderRefY=null,pushupHipRefY=null;
+function smoothAngle(raw){angleHistory.push(raw);if(angleHistory.length>SMOOTH_N)angleHistory.shift();return angleHistory.reduce((a,b)=>a+b,0)/angleHistory.length;}
+function getAvgAngle(lms){
+  const g=i=>lms[i];
+  if(currentEx==='squat'){const lk=g(LM.L_KNEE),rk=g(LM.R_KNEE);if(!lk||!rk||lk.visibility<0.4||rk.visibility<0.4)return null;const la=calcAngle(g(LM.L_HIP),lk,g(LM.L_ANKLE)),ra=calcAngle(g(LM.R_HIP),rk,g(LM.R_ANKLE));updateAngleUI(la,ra);return(la+ra)/2;}
+  else{const le=g(LM.L_ELBOW),re=g(LM.R_ELBOW);if(!le||!re||le.visibility<0.3||re.visibility<0.3)return null;const la=calcAngle(g(LM.L_SHOULDER),le,g(LM.L_WRIST)),ra=calcAngle(g(LM.R_SHOULDER),re,g(LM.R_WRIST));updateAngleUI(la,ra);return(la+ra)/2;}
+}
+function validatePullup(lms){const g=i=>lms[i],ls=g(LM.L_SHOULDER),rs=g(LM.R_SHOULDER),lw=g(LM.L_WRIST),rw=g(LM.R_WRIST);if(!ls||!rs||!lw||!rw)return{wristAbove:false,bodyRise:0,shoulderY:0.5};const sy=(ls.y+rs.y)/2,wy=(lw.y+rw.y)/2;return{wristAbove:wy<sy-0.05,bodyRise:pullupShoulderRefY!==null?pullupShoulderRefY-sy:0,shoulderY:sy};}
+function validatePushup(lms){const g=i=>lms[i],ls=g(LM.L_SHOULDER),rs=g(LM.R_SHOULDER),lw=g(LM.L_WRIST),rw=g(LM.R_WRIST),lh=g(LM.L_HIP),rh=g(LM.R_HIP);if(!ls||!rs||!lw||!rw||!lh||!rh)return{valid:false,hipY:0.5,bodyDrop:0};const sy=(ls.y+rs.y)/2,wy=(lw.y+rw.y)/2,hy=(lh.y+rh.y)/2;return{valid:wy>sy+0.05&&Math.abs(sy-hy)<0.22,hipY:hy,bodyDrop:pushupHipRefY!==null?hy-pushupHipRefY:0};}
+function detectRep(avg,lms){
+  const cfg=EXERCISE_CONFIG[currentEx],s=smoothAngle(avg);
+  if(currentEx==='pullup'){const{wristAbove,bodyRise,shoulderY}=validatePullup(lms);if(!wristAbove)return;if(s>cfg.downThr){if(phase!=='DOWN'){pullupShoulderRefY=shoulderY;phase='DOWN';updatePhaseUI();}}else if(s<cfg.upThr){if(phase==='DOWN'&&bodyRise>0.04){phase='UP';updatePhaseUI();}else if(phase==='DOWN')showCheatWarning();}else if(s>cfg.downThr&&phase==='UP'){finishRep();phase='DOWN';pullupShoulderRefY=shoulderY;updatePhaseUI();}}
+  else if(currentEx==='pushup'){const{valid,hipY,bodyDrop}=validatePushup(lms);if(!valid)return;if(s>cfg.upThr){if(phase!=='UP'){pushupHipRefY=hipY;if(phase==='DOWN')finishRep();phase='UP';updatePhaseUI();}}else if(s<cfg.downThr){if(phase==='UP'){if(bodyDrop>0.03){phase='DOWN';updatePhaseUI();}else showCheatWarning();}}}
+  else{if(s<cfg.downThr&&phase!=='DOWN'){phase='DOWN';updatePhaseUI();}else if(s>cfg.upThr){if(phase==='DOWN')finishRep();if(phase!=='UP'){phase='UP';updatePhaseUI();}}}
+}
+let cheatWarnTimer=null;
+function showCheatWarning(){const panel=document.getElementById('video-panel');if(panel.querySelector('.cheat-warn'))return;const el=document.createElement('div');el.className='cheat-warn';el.textContent='⚠ 자세 불인정';panel.appendChild(el);clearTimeout(cheatWarnTimer);cheatWarnTimer=setTimeout(()=>el.remove(),1200);}
+function finishRep(){repCount++;combo++;updateCountUI();updateComboUI();triggerFlash();addExp(currentEx);}
+
+// Canvas
+const CONNECTIONS=[[11,13],[13,15],[12,14],[14,16],[11,12],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[29,31],[28,30],[30,32]];
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+function drawPose(lms){ctx.clearRect(0,0,canvas.width,canvas.height);if(!lms)return;ctx.strokeStyle='rgba(74,143,255,.75)';ctx.lineWidth=2.5;CONNECTIONS.forEach(([i,j])=>{const a=lms[i],b=lms[j];if(!a||!b||a.visibility<0.3||b.visibility<0.3)return;ctx.beginPath();ctx.moveTo(a.x*canvas.width,a.y*canvas.height);ctx.lineTo(b.x*canvas.width,b.y*canvas.height);ctx.stroke();});lms.forEach(lm=>{if(lm.visibility<0.3)return;ctx.beginPath();ctx.arc(lm.x*canvas.width,lm.y*canvas.height,5,0,Math.PI*2);ctx.fillStyle='#4A8FFF';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();});}
+
+// UI 헬퍼
+const video=document.getElementById('video'),countEl=document.getElementById('count-display'),phaseBadge=document.getElementById('phase-badge'),liveBadge=document.getElementById('live-badge'),exLabelEl=document.getElementById('ex-label'),videoPanel=document.getElementById('video-panel');
+function updateCountUI(){countEl.textContent=String(repCount).padStart(2,'0');countEl.classList.add('bump');setTimeout(()=>countEl.classList.remove('bump'),150);}
+function updatePhaseUI(){phaseBadge.textContent=phase;phaseBadge.className='phase-badge';if(phase==='DOWN')phaseBadge.classList.add('down');if(phase==='UP')phaseBadge.classList.add('up');}
+function updateAngleUI(l,r){document.getElementById('m1').textContent=Math.round(l)+'°';document.getElementById('m2').textContent=Math.round(r)+'°';const pl=Math.max(0,Math.min(100,((l-40)/140)*100)),pr=Math.max(0,Math.min(100,((r-40)/140)*100));const b1=document.getElementById('b1'),b2=document.getElementById('b2');b1.style.width=pl+'%';b1.style.background=tc(pl);b2.style.width=pr+'%';b2.style.background=tc(pr);}
+function tc(p){return p>65?'#22c55e':p>35?'#4A8FFF':'#ef4444';}
+function triggerFlash(){const el=document.createElement('div');el.className='flash-overlay';videoPanel.appendChild(el);setTimeout(()=>el.remove(),430);}
+
+// MediaPipe
+function onResults(results){canvas.width=video.videoWidth||640;canvas.height=video.videoHeight||480;drawPose(results.poseLandmarks);if(results.poseLandmarks){const avg=getAvgAngle(results.poseLandmarks);if(avg!==null)detectRep(avg,results.poseLandmarks);}}
+async function startCamera(){
+  document.getElementById('error-msg').style.display='none';
+  const btn=document.getElementById('btn-start');btn.disabled=true;btn.textContent='로딩 중...';
+  try{
+    const pose=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`});
+    pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:.6,minTrackingConfidence:.6});
+    pose.onResults(onResults);
+    cameraInstance=new Camera(video,{onFrame:async()=>{await pose.send({image:video});},width:640,height:480});
+    await cameraInstance.start();
+    liveBadge.textContent='● LIVE';liveBadge.classList.add('on');
+    btn.textContent='■ 정지';btn.classList.add('stop');btn.disabled=false;btn.onclick=stopCamera;
+  }catch(e){const em=document.getElementById('error-msg');em.style.display='block';em.textContent='⚠ 카메라 오류: '+e.message;btn.textContent='▶ 카메라 시작';btn.disabled=false;}
+}
+function stopCamera(){if(cameraInstance){cameraInstance.stop();cameraInstance=null;}ctx.clearRect(0,0,canvas.width,canvas.height);liveBadge.textContent='● OFF';liveBadge.classList.remove('on');const btn=document.getElementById('btn-start');btn.textContent='▶ 카메라 시작';btn.classList.remove('stop');btn.onclick=startCamera;phase='IDLE';updatePhaseUI();angleHistory=[];document.getElementById('m1').textContent=document.getElementById('m2').textContent='—';}
+function switchEx(ex){currentEx=ex;repCount=0;phase='IDLE';angleHistory=[];shoulderYHistory=[];hipYHistory=[];pullupShoulderRefY=null;pushupHipRefY=null;updateCountUI();updatePhaseUI();exLabelEl.textContent=EXERCISE_CONFIG[ex].label;document.querySelectorAll('.ex-tab').forEach(t=>t.classList.toggle('active',t.dataset.ex===ex));}
+document.querySelectorAll('.ex-tab').forEach(t=>{t.onclick=()=>switchEx(t.dataset.ex);});
+document.getElementById('btn-start').onclick=startCamera;
+document.getElementById('btn-reset').onclick=()=>{repCount=0;phase='IDLE';combo=0;sessionExp={squat:0,pushup:0,pullup:0};angleHistory=[];updateCountUI();updatePhaseUI();updateSessionUI();document.getElementById('combo-num').textContent='0';['ms10','ms20','ms30'].forEach(id=>document.getElementById(id).classList.remove('reached'));};
+
+// 초기 렌더
+updateRPGUI(false); updateSessionUI();
+</script>
+
+</body>
+</html>
